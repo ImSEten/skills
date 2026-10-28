@@ -8,6 +8,8 @@
 | 技能 | 说明 |
 |------|------|
 | [tradingagents-astock](tradingagents-astock/SKILL.md) | A 股多智能体投研分析：免费直连数据（新浪/腾讯/东财/同花顺/百度）+ 七维度研判 + 多空辩论 + 风险评级。仅依赖 Python3 + `requests`，零 API key。 |
+| [tradingagents-analysis](tradingagents-analysis/SKILL.md) | A 股托管 API 投研：15 名 AI 分析师五阶段协作分析，输出结构化买卖建议（需 `TRADINGAGENTS_TOKEN`）。 |
+| [tradingagents-ensemble](tradingagents-ensemble/SKILL.md) | 编排技能：股票/金融分析时并行调用本地与 API 两个投研技能，对齐口径、对比一致与分歧，综合给出结论。 |
 
 ## 目录结构
 
