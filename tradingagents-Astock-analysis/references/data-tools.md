@@ -2,7 +2,7 @@
 
 数据获取由本技能自带的 `scripts/fetch_data.py` 完成：仅依赖 Python3 + `requests`，
 免费直连新浪/腾讯/东财/同花顺/百度等公开 HTTP 接口，**零 API key、零工程依赖**。
-把整个 `skills/tradingagents-astock/` 目录拷贝到任何环境即可独立运行。
+把整个 `skills/tradingagents-Astock-analysis/` 目录拷贝到任何环境即可独立运行。
 
 ## 前提与运行
 

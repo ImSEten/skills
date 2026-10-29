@@ -1,24 +1,25 @@
 # Hermes Skills
 
 本仓库存放可直接装入 Hermes（或兼容 Agent Skills 规范的环境）使用的技能包。
-每个技能完全自包含：拷贝对应技能目录到任意环境的技能目录即可运行，不依赖本仓库之外的其他工程。
+技能完全自包含：拷贝技能目录到任意环境的技能目录即可运行，不依赖本仓库之外的其他工程。
 
 ## 技能列表
 
 | 技能 | 说明 |
 |------|------|
-| [tradingagents-astock](tradingagents-astock/SKILL.md) | A 股多智能体投研分析：免费直连数据（新浪/腾讯/东财/同花顺/百度）+ 七维度研判 + 多空辩论 + 风险评级。仅依赖 Python3 + `requests`，零 API key。 |
-| [tradingagents-analysis](tradingagents-analysis/SKILL.md) | A 股 15 分析师五阶段投研：Hermes 扮演 15 名分析师（分析团队→博弈→多空辩论→交易→风控），免费直连数据，输出结构化决策（零 API key、零托管服务）。 |
-| [tradingagents-ensemble](tradingagents-ensemble/SKILL.md) | 编排技能：股票/金融分析时并行运行两个免费直连投研技能（七维研判 + 15 分析师框架），对齐口径、对比一致与分歧，综合给出结论。 |
+| [tradingagents-Astock-analysis](tradingagents-Astock-analysis/SKILL.md) | A 股 21 分析师六阶段投研：免费直连数据（新浪/腾讯/东财/同花顺/百度，15 数据块零 key）+ 七维权重研判 + 博弈裁判 + 多空辩论 + 交易执行 + 风险管控 + 交叉验证综合决策，输出结构化 JSON（零 API key、零托管服务）。 |
+
+> 合并自原 `tradingagents-astock`（数据脚本 + 七维权重）、`tradingagents-analysis`（15 分析师五阶段）、
+> `tradingagents-ensemble`（双源交叉验证综合）三个技能，专家数量增至 21 名、六阶段流水线。
 
 ## 目录结构
 
-每个技能一个独立目录，遵循统一结构：
+技能使用统一结构：
 
 ```
 <skill-name>/
 ├── SKILL.md          # 技能入口：触发条件（When to Use）、工作流程、快速参考、Pitfalls、Verification
-├── references/       # 参考文档：分析方法、数据工具说明、领域规则
+├── references/       # 参考文档：分析方法、专家角色、综合决策、数据工具说明、领域规则
 └── scripts/          # 可执行脚本（自包含，只依赖标准库 + requests）
 ```
 
@@ -28,10 +29,10 @@
 
 ```bash
 # Hermes 用户技能目录
-cp -r tradingagents-astock ~/.hermes/skills/
+cp -r tradingagents-Astock-analysis ~/.hermes/skills/
 
 # 或拷贝到工程的 skills/ 目录
-cp -r tradingagents-astock /path/to/project/skills/
+cp -r tradingagents-Astock-analysis /path/to/project/skills/
 ```
 
 技能目录内通过 `SKILL.md` 的 frontmatter（`name` / `description`）被自动识别与索引。
