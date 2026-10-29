@@ -1,7 +1,7 @@
 ---
 name: tradingagents-ensemble
 description: 股票/金融分析时并行调用两个A股投研技能并综合结论。
-version: 0.1.0
+version: 0.2.0
 author: simonlin1212 (simonlin1212), Hermes Agent
 license: Apache-2.0
 platforms: [linux, macos, windows]
@@ -15,16 +15,16 @@ metadata:
 
 本技能是**编排器**：当用户要求对 A 股/金融标的做投研分析时，同时运行两个独立的 A 股投研技能，把两者的结论对齐、对比、交叉验证，最终输出**综合结论**——而不是只依赖其中任何一个。
 
-- `tradingagents-astock`（本地）：免费直连数据 + Hermes 自研七维研判，零 API key。
-- `tradingagents-analysis`（托管 API）：15 名 AI 分析师五阶段分析，需 `TRADINGAGENTS_TOKEN`。
+- `tradingagents-astock`：免费直连数据 + Hermes 七维研判，产出 Buy/Hold/Sell 评级与理由。
+- `tradingagents-analysis`：免费直连数据 + Hermes 扮演 15 名分析师五阶段研判，产出结构化决策（含置信度、目标价/止损、风险项、关键指标）。
 
-两个来源视角不同（本地数据 + 自研推理 vs 托管多智能体），一致点增强置信，分歧点暴露盲区。
+两个来源的**分析视角不同**（七维框架 vs 15 分析师五阶段框架），数据均来自同一套免费直连脚本——一致点增强置信，分歧点暴露盲区。全程**零 API key、零托管服务**。
 
 ## When to Use
 
 - 用户要求对 A 股标的做投研分析、买卖判断、风险评估、盘后复盘
-- 需要本地数据分析和托管 AI 分析师**双视角交叉验证**的场合
-- 单一技能结论存疑，需要第二来源确认
+- 需要**两个独立分析框架交叉验证**的场合（七维 vs 15 分析师）
+- 单一技能结论存疑，需要第二套框架确认
 
 **Don't use for:**
 - 只需要快速查行情/单维度数据（直接用 `tradingagents-astock` 的数据脚本即可）
@@ -33,52 +33,54 @@ metadata:
 
 ## 前提
 
-- 两个子技能均可用：`tradingagents-astock`（Python3 + requests）、`tradingagents-analysis`（`TRADINGAGENTS_TOKEN` 已配置）。
+- Python ≥ 3.10 且已装 `requests`。
+- 三个技能目录一起拷贝（`tradingagents-ensemble` + `tradingagents-astock` + `tradingagents-analysis`）——数据脚本在 astock 技能内，另两个技能数据层依赖它。
 - 本技能不重复两者的操作细节——执行时分别遵循两个子技能的指引。
 
 ## 工作流程
 
-1. **统一输入**：从对话提取标的（6 位代码或中文名）与分析日期（默认今天）。两个子技能用同一输入。
-2. **并行执行两个来源**：
-   - **来源 A（本地，tradingagents-astock）**：按该技能流程抓数据并完成七维研判，产出评级（Buy/Hold/Sell）+ 方向 + 理由 + 风险清单。
-   - **来源 B（托管 API，tradingagents-analysis）**：提交分析任务并轮询（1-5 分钟，用后台运行），产出 decision/direction/confidence/risk_items/key_metrics。
-   - 建议：先后台提交 B，轮询期间完成 A，最后取 B 结果。
-3. **结果对齐**：统一口径——评级映射到 Buy/Hold/Sell；方向映射到看多/看空/中性；理由与风险项逐条列出，标注来源。
-4. **对比分析**：
-   - **一致点**：两个来源共同支持的判断（含共同风险），列为"双源确认"。
-   - **分歧点**：列出差异及可能原因（数据时点差异、视角差异、API 数据缺失等），不掩盖分歧。
-5. **综合结论**：输出
+1. **统一输入**：从对话提取标的（6 位代码或中文名）与分析日期（默认今天）。
+2. **抓取一次数据**：`terminal(command="python <astock目录>/scripts/fetch_data.py <标的> [--date ...]")` 获取全量数据素材，两个来源复用同一份数据。
+3. **并行执行两套分析**：
+   - **来源 A（tradingagents-astock）**：按该技能流程做七维研判 + 多空辩论 + 风控，产出评级（Buy/Hold/Sell）+ 方向 + 理由 + 风险清单。
+   - **来源 B（tradingagents-analysis）**：按该技能流程扮演 15 名分析师完成五阶段研判，产出结构化 JSON（decision/direction/confidence/target_price/stop_loss_price/risk_items/key_metrics/final_trade_decision）。
+4. **结果对齐**：统一口径——B 的 decision（BUY/SELL/HOLD）映射到 Buy/Hold/Sell；方向映射到看多/看空/中性；理由与风险项逐条列出并标注来源（`[A]` 七维 / `[B]` 15分析师）。
+5. **对比分析**：
+   - **一致点**：两套框架共同支持的判断（含共同风险），列为"双源确认"。
+   - **分歧点**：列出差异及可能原因（框架侧重不同、数据块缺失、时点差异等），不掩盖分歧。
+6. **综合结论**：输出
    - `final_decision`（Buy/Hold/Sell）+ `direction` + `confidence`（0-100，双源一致时提高，分歧时降低）
    - `consistency`（双源一致点）、`divergence`（分歧点）
-   - `reasons`：每条标注 `[本地]` / `[API]` / `[双源]`
-   - `risk_items`：合并两个来源的风险清单（去重，注明来源）
+   - `reasons`：每条标注 `[A]` / `[B]` / `[双源]`
+   - `risk_items`：合并两来源风险清单（去重，注明来源）；B 的 target/stop 仅作参考并标注不确定性
    - 附免责声明。
-6. **降级处理**（任一来源不可用时不中断）：
-   - B 缺 token / API 不可达 → 只用 A，结论标注"单一来源（本地）"。
-   - A 数据抓取失败 → 只用 B，标注"单一来源（API）"。
-   - 两者都不可用 → 停止并告知用户需要哪个前置条件。
+7. **降级处理**（任一来源不可用时不中断）：
+   - 数据脚本不可用（网络受限/缺依赖）→ 两套分析都无法取数，停止并告知所需前置条件。
+   - 某一套分析流程无法完成（如时间/上下文限制）→ 只用另一套，结论标注"单一来源"。
+   - 两者都不可用 → 停止并说明原因。
 
-**完成判据**：综合报告包含两个来源各自的结论、一致点清单、分歧点清单、最终评级与置信度；每个理由/风险都注明来源；降级时明确标注单一来源。
+**完成判据**：综合报告包含两套框架各自的结论、一致点清单、分歧点清单、最终评级与置信度；每个理由/风险都注明来源；降级时明确标注单一来源。
 
 ## Quick Reference
 
 | 目的 | 动作 |
 |------|------|
 | 加载两个子技能 | `skill_view("tradingagents-astock")` + `skill_view("tradingagents-analysis")` |
-| 本地数据+研判（来源 A） | 按 astock 技能：`python <astock目录>/scripts/fetch_data.py <标的>` → 七维分析 |
-| 托管 API 分析（来源 B） | 按 analysis 技能：`bash <analysis目录>/scripts/analyze.sh <标的>`（后台运行） |
-| 综合输出 | 按上方「工作流程」第 3-5 步 |
+| 抓数据（一次，两套分析复用） | `terminal(command="python <astock目录>/scripts/fetch_data.py <标的>")` |
+| 来源 A：七维研判 | 按 astock 技能流程（`references/analysis-framework.md`） |
+| 来源 B：15 分析师五阶段 | 按 analysis 技能流程（`references/analyst-roles.md`） |
+| 综合输出 | 按上方「工作流程」第 4-6 步 |
 
 ## Pitfalls
 
-- **两套评级口径**：本地用 Buy/Hold/Sell，API 用 BUY/SELL/HOLD + confidence + target_price/stop_loss。综合时统一到 Buy/Hold/Sell，不直接拼接。
-- **耗时差异**：API 分析 1-5 分钟（轮询间隔 ≥15s）；本地数据+推理数分钟。先提交 API 再跑本地可隐藏等待。
-- **时点差异**：两个来源的数据抓取时间不同，实时值（北向、资金流、估值）可能不一致；以较新者为准并注明。
-- **API 无 token 时**：analysis 技能自带无令牌降级路径，但编排器按上述第 6 步处理即可，不要让单一来源的失败阻塞整体。
-- **免责**：综合结论同样只给方向/评级/理由，不构成投资建议；输出保留免责声明。
+- **两套评级口径**：来源 A 用 Buy/Hold/Sell，来源 B 用 BUY/SELL/HOLD + confidence + target_price/stop_loss。综合时统一到 Buy/Hold/Sell，不直接拼接。
+- **数据同源**：两套分析共用同一份抓取数据，数据块失败时两套分析同一块都会缺失——不要误把"同源缺失"当"双源确认"。
+- **时点差异**：若两套分析在不同时间抓数据，实时值（北向、资金流、估值）可能不一致；以较新者为准并注明。
+- **B 的目标价/止损是估算**：基于支撑压力与 ATR，仅研究参考，不构成操作指令。
+- **免责**：综合结论只给方向/评级/理由，不构成投资建议；输出保留免责声明。
 
 ## Verification
 
 1. 单源自检：两个子技能各自能跑通（见各自技能的 Verification）。
-2. 双源对比：对同一标的（如 `600519`）分别取得两来源结论，确认都能解析出评级与理由。
+2. 双源对比：对同一标的（如 `600519`）分别完成两套分析，确认都能解析出评级与理由。
 3. 综合完整性：输出含 `consistency`、`divergence`、`final_decision`、带来源标注的 `reasons` 与 `risk_items`。

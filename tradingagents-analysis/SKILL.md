@@ -1,269 +1,117 @@
 ---
 name: tradingagents-analysis
-version: 0.6.1
-description: >-
-  A股多智能体 AI 投研分析工具 — 15 名 AI 分析师协作完成技术分析、基本面分析、
-  市场情绪研判、资金流向追踪（北向资金/主力资金）、宏观经济分析及博弈论推演，
-  输出结构化买卖建议与风险评估。支持沪深 A 股股票代码和中文名称。
-  Multi-agent AI stock analysis for China A-shares.
-  15 specialized analysts collaborate across technical analysis, fundamental analysis,
-  sentiment analysis, smart money flow tracking, macro economics, and game theory
-  to deliver structured buy/sell/hold recommendations with risk assessment.
-homepage: https://app.510168.xyz
-repository: https://github.com/KylinMountain/TradingAgents-AShare
-tags:
-  - stock-analysis
-  - A-share
-  - A股
-  - 股票分析
-  - 股票
-  - 炒股
-  - 选股
-  - 荐股
-  - trading
-  - investment
-  - 投资
-  - 投研
-  - 量化投研
-  - 研报
-  - 盘后分析
-  - 复盘
-  - multi-agent
-  - 多智能体
-  - AI分析
-  - AI炒股
-  - technical-analysis
-  - 技术分析
-  - K线
-  - fundamental-analysis
-  - 基本面分析
-  - sentiment-analysis
-  - 市场情绪
-  - smart-money
-  - 资金流向
-  - 北向资金
-  - 主力资金
-  - 龙虎榜
-  - finance
-  - 金融
-  - China
-  - 中国股市
-  - 沪深
-  - 上证
-  - 深证
-  - quant
-  - risk-assessment
-  - 风险评估
-  - 买卖建议
-  - claude-code
-  - openclaw
+description: 对A股做15分析师五阶段投研分析并输出结构化决策。
+version: 1.0.0
+author: simonlin1212 (simonlin1212), Hermes Agent
+license: Apache-2.0
+platforms: [linux, macos, windows]
 metadata:
-  openclaw:
-    requires:
-      env:
-        - TRADINGAGENTS_TOKEN
-        - TRADINGAGENTS_API_URL
-      bins:
-        - curl
-        - python3
-        - bash
-    primaryEnv: TRADINGAGENTS_TOKEN
-    emoji: "📈"
-    homepage: https://app.510168.xyz
+  hermes:
+    tags: [A股, 股票分析, 投研, 15分析师, 五阶段, 多智能体, 博弈论, 多空辩论, 风险管控, 结构化决策, stock-analysis, A-share, trading]
+    related_skills: [tradingagents-astock]
 ---
 
-# TradingAgents 多智能体 A 股投研分析
+# TradingAgents-Analysis Skill
 
-使用 TradingAgents API，让 **15 名专业 AI 分析师**对 A 股进行五阶段深度协作研判，输出结构化投资建议。
+本技能让 Hermes **扮演 15 名 AI 分析师**，按五阶段框架（分析团队 → 博弈裁判 → 多空辩论 → 交易执行 → 风险管控）对 A 股标的做深度投研，最终输出**结构化决策 JSON**（decision / direction / confidence / target_price / stop_loss_price / risk_items / key_metrics / final_trade_decision）。
 
-## 🎯 快速上手
+数据获取全部来自**免费直连的公开 HTTP 接口**（复用同仓库 `tradingagents-astock` 技能的自包含数据脚本），**零 API key、零托管服务、零 token**。
 
-**直接对我说：**
-- "帮我分析一下贵州茅台"
-- "宁德时代值得买入吗"
-- "分析一下 600519 的技术面"
-- "比亚迪最近资金流向怎么样"
+## When to Use
 
-**我会调用 15 个 AI 分析师，从市场、技术、基本面、情绪、资金五个维度深度分析，给你专业的投资建议。**
+- 用户要求对 A 股做 15 分析师级深度投研（覆盖宏观、博弈论、多空辩论、风控全链条）
+- 需要**结构化决策输出**（评级 + 置信度 + 目标价/止损 + 风险项 + 关键指标）
+- 盘后复盘、持仓标的风险评估
+- 短线快速研判（14 天窗口、跳过财报，见「短线模式」）
 
----
+**Don't use for:**
+- 非 A 股市场（数据层拒绝非 A 股代码）
+- 盘中实时盯盘（完整分析需数分钟）
+- 仅查行情/单维度数据（直接用 `tradingagents-astock` 的数据脚本即可）
 
-## 🤖 系统架构：五阶段 15 智能体
+## 前提
 
-| 阶段 | 智能体 | 职责 |
-|------|--------|------|
-| 1. 分析团队 | 市场/新闻/情绪/基本面/宏观/聪明钱 | 多维度原始数据解读 |
-| 2. 博弈裁判 | 博弈论管理者 | 主力与散户预期差分析 |
-| 3. 多空辩论 | 多头/空头研究员 + 裁判 | 对立观点激烈博弈 |
-| 4. 执行决策 | 交易员 | 综合研判生成操作建议 |
-| 5. 风险管控 | 激进/中性/保守分析师 + 组合经理 | 多维度风控审核 |
+- Python ≥ 3.10 且已装 `requests`。
+- 同仓库的 `tradingagents-astock` 技能可用（本技能数据层依赖它的 `scripts/fetch_data.py`；拷贝时两个技能目录一起拷贝）。
+- **无需任何 API key 或环境变量。**
 
----
+## 数据获取
 
-# TradingAgents Multi-Agent Investment Research
-
-Use the TradingAgents API to let **15 specialized AI analysts** conduct deep, five-stage collaborative research on A-Share stocks, delivering structured trading recommendations.
-
-## 🤖 System Architecture: 5 Stages · 15 Agents
-
-| Stage | Agents | Role |
-|-------|--------|------|
-| 1. Analyst Team | Market / News / Sentiment / Fundamentals / Macro / Smart Money | Multi-dimensional raw data analysis |
-| 2. Game Theory | Game Theory Manager | Main-force vs. retail expectation gap |
-| 3. Bull/Bear Debate | Bull & Bear Researchers + Judge | Adversarial viewpoint debate |
-| 4. Trade Execution | Trader | Synthesize research into actionable decision |
-| 5. Risk Control | Aggressive / Neutral / Conservative + Portfolio Manager | Multi-layer risk review |
-
-## 📋 适用场景
-
-✅ **适合使用：**
-- 个股深度分析（技术面 + 基本面）
-- 投资决策参考
-- 盘后复盘分析
-- 持仓标的风险评估
-- 资金流向与市场情绪研判
-
-❌ **不适合：**
-- 盘中实时盯盘（分析需要 1-5 分钟）
-- 超短线交易（分钟级决策）
-- 加密货币、美股等非 A 股市场
-
-## 🔒 隐私与安全
-
-- **发送范围**：本技能**仅**从对话中提取股票名称/代码、分析日期、分析视角等参数，将其作为 `symbol`/`trade_date`/`horizons` 字段发送至后端 API。**不发送对话原文、不读取本地文件、不上传任何其他隐私数据。**
-- **令牌安全**：`TRADINGAGENTS_TOKEN`（格式 `ta-sk-*`）是访问后端的唯一凭证，请使用最小权限令牌，如怀疑泄露请立即在 [app.510168.xyz](https://app.510168.xyz) 吊销并重新生成。
-- **敏感内容提示**：请勿在分析请求中粘贴个人账户信息、真实持仓或其他敏感内容，本技能无法阻止用户主动提交这些内容。
-- **自托管**：如需完全掌控数据流向，可参考 [GitHub 文档](https://github.com/KylinMountain/TradingAgents-AShare) 自行部署后端，并将 `TRADINGAGENTS_API_URL` 指向自建服务器。
-
-> **关于凭证元数据**：本技能的 frontmatter 在 `metadata.openclaw` 中声明了 `TRADINGAGENTS_TOKEN` 为 `primaryEnv`，并列入 `requires.env`。
-
-## 🔒 Privacy & Data Transmission
-
-- **What is sent**: Only the extracted stock symbol, trade date, and analysis parameters (`symbol`, `trade_date`, `horizons`) are transmitted to the backend. The raw conversation text is **never** forwarded.
-- **Token**: `TRADINGAGENTS_TOKEN` (pattern `ta-sk-*`) is the sole credential. Use a minimal-privilege token and rotate it immediately if compromised.
-- **Sensitive content**: Do not paste personal account data, real positions, or other sensitive information into analysis requests.
-- **Self-hosting**: For full data sovereignty, deploy the backend yourself and set `TRADINGAGENTS_API_URL` to your server. See the [GitHub repo](https://github.com/KylinMountain/TradingAgents-AShare).
-
-> **Credential metadata**: This skill's frontmatter declares `TRADINGAGENTS_TOKEN` as `primaryEnv` under `metadata.openclaw.requires.env`.
-
-## ⚙️ 快速配置
-
-**方式一：使用官方托管服务（零部署，开箱即用）**
-
-1. 登录 [https://app.510168.xyz](https://app.510168.xyz)
-2. 进入 **Settings → API Tokens** 创建令牌
-3. 配置环境变量：
-```bash
-export TRADINGAGENTS_TOKEN="ta-sk-your_key_here"
-```
-
-**方式二：私有化部署（数据完全自主可控）**
-
-如对数据隐私有要求，可自行部署后端，所有分析数据仅在你自己的服务器上处理：
+复用 `tradingagents-astock` 的免费直连脚本：
 
 ```bash
-# 1. 部署后端，参考 https://github.com/KylinMountain/TradingAgents-AShare
-# 2. 将 API 地址指向自建服务
-export TRADINGAGENTS_API_URL="http://your-server:8000"
-export TRADINGAGENTS_TOKEN="ta-sk-your_key_here"
+python <astock技能目录>/scripts/fetch_data.py <6位代码或中文名> [--date YYYY-MM-DD] [--sections ...] [--lookback N]
 ```
 
-## 🚀 常用操作
+默认抓全量数据块。15 个分析师各自使用哪些数据块见 `references/analyst-roles.md`。
+数据接口细节（字段、限流、历史日期语义）见 `tradingagents-astock/references/data-tools.md`。
 
-**推荐方式：使用一体化脚本**（自动提交 → 轮询 → 获取结果）
+## 工作流程
 
-```bash
-# 脚本路径（相对于技能目录）
-bash scripts/analyze.sh <symbol[,symbol2,...]> [trade_date] [horizons]
+1. **提取标的与日期**：6 位代码或中文名；日期不晚于今天（历史分析时注意快照告警）。
+2. **数据采集**：运行上述脚本获取全量数据素材（或按分析需要裁剪 `--sections`）。
+3. **阶段一 · 分析团队**：6 名分析师（市场/新闻/情绪/基本面/宏观/聪明钱）各自基于数据独立产出报告，每份注明依据的数据块。
+4. **阶段二 · 博弈裁判**：博弈论管理者判断主力与散户的预期差。
+5. **阶段三 · 多空辩论**：多头、空头研究员交锋，裁判逐条裁决并给出综合投资计划。
+6. **阶段四 · 交易执行**：交易员在 A 股约束（T+1/涨跌停/手数）下给出交易方案与参考价位区间。
+7. **阶段五 · 风险管控**：激进/中性/保守分析师三方审视，组合经理汇总成风险清单与最终评级。
+8. **输出结构化决策**：聚合为下述 JSON，附免责声明。
 
-# 单个分析
-bash scripts/analyze.sh 贵州茅台
-bash scripts/analyze.sh 600519.SH 2026-03-22
-bash scripts/analyze.sh 600519.SH 2026-03-22 medium
+**完成判据**：五阶段报告齐全；输出 JSON 含全部 8 个字段；评级与方向一致；每个论据可追溯到数据块；风险项逐条有数据或事实支撑。
 
-# 批量分析（逗号分隔，并行提交，统一等待）
-bash scripts/analyze.sh 贵州茅台,比亚迪,宁德时代
-bash scripts/analyze.sh 600519.SH,002594.SZ,300750.SZ 2026-03-22
-```
-
-脚本会自动完成：提交任务 → 每 15 秒轮询状态 → 完成后输出 JSON 结果。
-批量模式下所有任务并行提交，统一轮询，最后汇总输出。超时默认 600 秒。
-
-可通过环境变量调整行为：
-- `POLL_INTERVAL` — 轮询间隔秒数（默认 15）
-- `POLL_TIMEOUT` — 最大等待秒数（默认 600）
-
-**手动分步操作**（如需单独调用某一步）
-
-所有请求使用 `$TRADINGAGENTS_TOKEN` 作为 Bearer 令牌。
-
-1. 提交分析任务
-```bash
-curl -X POST "${TRADINGAGENTS_API_URL:-https://api.510168.xyz}/v1/analyze" \
-  -H "Authorization: Bearer $TRADINGAGENTS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"symbol": "贵州茅台"}'
-```
-
-2. 查询任务状态
-```bash
-curl "${TRADINGAGENTS_API_URL:-https://api.510168.xyz}/v1/jobs/{job_id}" \
-  -H "Authorization: Bearer $TRADINGAGENTS_TOKEN"
-```
-
-3. 获取完整分析结果（任务完成后）
-```bash
-curl "${TRADINGAGENTS_API_URL:-https://api.510168.xyz}/v1/jobs/{job_id}/result" \
-  -H "Authorization: Bearer $TRADINGAGENTS_TOKEN"
-```
-
-## 📊 示例输出
+## 输出结构
 
 ```json
 {
-  "decision": "BUY",
-  "direction": "看多",
-  "confidence": 78,
-  "target_price": 1850.0,
-  "stop_loss_price": 1680.0,
+  "decision": "BUY | HOLD | SELL",
+  "direction": "看多 | 看空 | 中性",
+  "confidence": 0,
+  "target_price": null,
+  "stop_loss_price": null,
   "risk_items": [
-    {"name": "估值偏高", "level": "medium", "description": "当前 PE 处于历史 75 分位"},
-    {"name": "外资流出", "level": "low",    "description": "近 5 日北向资金小幅净流出"}
+    {"name": "估值偏高", "level": "medium", "description": "当前 PE 处于历史 75 分位"}
   ],
   "key_metrics": [
-    {"name": "PE",   "value": "32.5x",  "status": "neutral"},
-    {"name": "ROE",  "value": "31.2%",  "status": "good"},
-    {"name": "毛利率", "value": "91.5%", "status": "good"}
+    {"name": "PE", "value": "20.8x", "status": "neutral"}
   ],
-  "final_trade_decision": "综合技术面突破与基本面支撑，建议逢低分批建仓..."
+  "final_trade_decision": "综合技术面与基本面，..."
 }
 ```
 
-## 🔄 无令牌降级路径
+- `target_price` / `stop_loss_price`：由交易员基于支撑/压力位与 ATR 估算，**仅为研究参考，标注不确定性**，不构成操作指令。
+- 评级用独立词（`BUY`/`SELL`/`HOLD`），避免 `Buyer interest`、`Sell-off` 这类延续词被误读。
+- 报告末尾保留免责声明：内容由 AI 基于公开数据自动生成，仅供研究，不构成投资建议。
 
-本技能依赖 `TRADINGAGENTS_TOKEN`（在 app.510168.xyz 注册）。若环境未配置令牌且用户没有/不愿注册，**不要卡住或只报"缺令牌"**——降级为免费数据源自行完成同维度分析：
+## 短线模式
 
-1. 加载 stock-screening-multi-agent 技能（`skill_view("stock-screening-multi-agent")`），用其免费接口采集行情/K线/资金流/财务数据——接口清单与字段映射在**该技能自己的** `references/a-share-free-data-apis.md` 里（零令牌、零依赖）
-2. 并行派发子代理（delegate_task）收集新闻、宏观/行业、情绪/资金情报
-3. 主代理汇总，输出与 API 版同构的报告结构：decision / direction / confidence / target_price / stop_loss_price / risk_items / key_metrics / final_trade_decision
+用户说"分析 XX 短线"时：只用 `kline`、`quote`、`fundflow`、`lhb` 数据块，技术窗口 14 天，
+跳过财报与解禁，重点放技术面与资金面，速度更快。
 
-## 🔄 任务执行流程
+## References
 
-深度分析通常耗时 **1 至 5 分钟**：
+- `references/analyst-roles.md` — 15 名分析师职责、输入数据块与分析要点（含数据块速查表）。
+- 数据层细节：`tradingagents-astock/references/data-tools.md`（接口/限流/历史语义）、`tradingagents-astock/references/a-share-rules.md`（A 股制度语境）。
 
-1. **识别标的**：从对话中**仅**提取股票名称或代码（及可选日期/视角），不发送对话原文
-2. **告知用户**：反馈任务即将提交，预计耗时 1-5 分钟
-3. **执行脚本**：使用 Bash 工具运行 `bash scripts/analyze.sh <symbol> [date] [horizons]`（设置 `run_in_background: true`），脚本自动完成提交、轮询和结果获取
-4. **汇总结论**：脚本输出完成后，解析 JSON 结果，向用户展示决策、方向、目标价、风险点
+## Quick Reference
 
-> **重要**：不要手动编写 curl 轮询循环，直接使用 `scripts/analyze.sh` 脚本。
+| 目的 | 动作 |
+|------|------|
+| 数据采集 | `terminal(command="python <astock技能目录>/scripts/fetch_data.py <标的>")` |
+| 只看关键块 | `terminal(command="python <astock技能目录>/scripts/fetch_data.py <标的> --sections kline,quote,fundflow,lhb")` |
+| 15 分析师细节 | `read_file` 本技能 `references/analyst-roles.md` |
+| 短线模式 | 用户说"短线"时按上节执行 |
 
-## 📌 支持标的范围
+## Pitfalls
 
-- **沪深 A 股**：中文名称（如 "比亚迪"、"宁德时代"）或代码（`002594.SZ`、`601012.SH`）
+- **数据层依赖**：本技能本身不含数据脚本，依赖同仓库 `tradingagents-astock` 的 `fetch_data.py`；单独拷贝时务必两个技能目录一起拷贝。
+- **历史日期**：实时估值、北向等无历史时点值的数据会快照告警，不得当作分析日事实；财报按"已公布"截断。
+- **东财限流**：批量抓多只时设 `EM_MIN_INTERVAL=1.5~2` 降速。
+- **目标价/止损是估算**：基于支撑压力与 ATR 的参考值，非操作指令；输出时标注不确定性。
+- **数据块失败**：部分源在网络受限环境不可达，脚本会标记失败并继续；对失败块换等价数据或重试。
+- **免责**：分析由 AI 基于公开数据生成，仅供研究，不构成投资建议。
 
-## 💡 注意事项
+## Verification
 
-- **轮询频率**：每次轮询间隔不低于 15 秒
-- **数据健壮性**：若部分数据源缺失，系统将基于宏观与行业逻辑进行外溢分析
-- **短线模式**：输入"分析 XX 短线"时，系统自动切换为 14 天技术面分析，跳过财报数据，速度更快
+1. 数据可用：`terminal(command="python <astock技能目录>/scripts/fetch_data.py 600519 --sections quote,kline")` 产出非空数据。
+2. 结构完整：对同一标的跑完五阶段，确认输出 JSON 含 `decision`/`direction`/`confidence`/`target_price`/`stop_loss_price`/`risk_items`/`key_metrics`/`final_trade_decision` 全部字段。
+3. 口径一致：`decision` 与 `direction` 一致；每条理由与风险可追溯到具体数据块。

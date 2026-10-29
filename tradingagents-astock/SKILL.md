@@ -27,7 +27,7 @@ metadata:
 **Don't use for:**
 - 港股/美股等非 A 股标的（脚本拒绝 4~5 位数字 / `.HK` 代码）
 - 盘中实时盯盘或分钟级决策（数据抓取与推理需要数分钟）
-- 调用托管 API 的 TradingAgents-AShare 服务（那是另一个产品，与本技能无关）
+- 需要 15 分析师五阶段框架或结构化决策输出（含目标价/止损）时，用同仓库的 `tradingagents-analysis` 技能；需要双来源交叉验证时，用 `tradingagents-ensemble`
 
 ## 前提
 
